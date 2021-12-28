@@ -21,15 +21,23 @@ class Client:
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         print("Client started, listening for offer requests...")
-        self.client_socket.bind(('172.31.32.1', 13117))
+        self.client_socket.bind(('', 13117))
         while True:
-            data_rcv, addr = self.client_socket.recvfrom(1024)
-            data = struct.unpack('Ibh', data_rcv)
-            if hex(data[0]) == "0xfeedbeef" and hex(data[1]) == "0x2":
-                print(f'Received offer from {addr[0]}, attempting to connect...')
-            print(addr[0], int(data[2]))
-            self.activate_client_tcp(addr[0], int(data[2]))
-            return
+            try:
+                data_rcv, addr = self.client_socket.recvfrom(1024)
+                if addr[0] != '172.1.0.76': 
+                    print(addr[0])
+                    continue
+                data = struct.unpack('Ibh', data_rcv)
+                if hex(data[0]) == "0xabcddcba" and hex(data[1]) == "0x2":
+                    print(f'Received offer from {addr[0]}, attempting to connect...')
+                self.activate_client_tcp(addr[0], int(data[2]))
+                return
+            except struct.error:
+                pass
+            except Exception as err:
+                print(err)
+
 
     def activate_client_tcp(self, server_name, server_port):
         """
@@ -40,15 +48,13 @@ class Client:
         """
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.connect((server_name, server_port))
-        print(server_name,server_port)
-        self.server_socket.sendall(str(self.team_name).encode())
+        self.server_socket.send(str(self.team_name).encode())
         self.wait_for_game_start()
         try:
             self.game_in_progress()
         except Exception as e:
             os.system("stty -raw echo")
             traceback.print_exc()
-            print("activate_client_tcp")
         self.game_ended()
 
     def wait_for_game_start(self):
@@ -71,9 +77,8 @@ class Client:
                 time.sleep(0.2)
 
 
-interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
-ip = [ip[-1][0] for ip in interfaces][1]
-print(ip)
+# interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
+# ip = [ip[-1][0] for ip in interfaces][1]
 cl = Client('Rom & Ory Team')
 cl.look_for_host()
 
