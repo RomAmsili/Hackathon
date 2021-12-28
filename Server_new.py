@@ -12,10 +12,8 @@ class Server:
     def __init__(self, statistics, flag=True):
         self.server_socket_udp = None
         self.server_socket_tcp = None
-        self.server_port = 13117
-        interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
-        ip = [ip[-1][0] for ip in interfaces][1]
-        self.server_ip = ip   #get_if_addr("eth1")
+        self.server_port = SERVER_PORT
+        self.server_ip = get_if_addr("eth1")
         self.broadcast_flag = flag
         self.game_participants = []
         self.game_participants_dict = {}
@@ -67,15 +65,15 @@ class Server:
         time_started = time.time()
 
         while True:
-            # if time.time() > time_started + SECONDS_WAITING_FOR_CLIENTS:
-            #     print(SECONDS_WAITING_FOR_CLIENTS,"second passed")
-            #     self.broadcast_flag = False
-            #     return
+            if time.time() > time_started + SECONDS_WAITING_FOR_CLIENTS:
+                print(SECONDS_WAITING_FOR_CLIENTS,"second passed")
+                self.broadcast_flag = False
+                return
             self.server_socket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-            self.server_socket_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             self.server_socket_udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            # self.server_socket_udp.bind(('', 50005))
-            self.server_socket_udp.sendto(message, (self.server_ip, 13117))
+            self.server_socket_udp.bind(('', 50005))
+            self.server_socket_udp.sendto(message, (BROADCAST_IP, BROADCAST_PORT))
             self.server_socket_udp.close()
             time.sleep(1)
 
@@ -87,11 +85,12 @@ class Server:
         print(f'opened tcp on {self.server_ip} with port num {self.server_port}')
         self.server_socket_tcp.bind(('', self.server_port))
         # self.server_socket_tcp.bind((self.server_ip, self.server_port))
-        self.server_socket_tcp.listen()
-        # self.server_socket_tcp.setblocking(False)
+        self.server_socket_tcp.listen(1)
+        self.server_socket_tcp.setblocking(False)
         while self.broadcast_flag:
             try:
                 connection_socket, addr = self.server_socket_tcp.accept()
+
                 msg = connection_socket.recv(MESSAGE_SIZE)
 
                 print("the team connected is:", ' >> ', msg.decode(UNICODE))
