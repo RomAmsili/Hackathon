@@ -30,6 +30,7 @@ CVIOLET2 = '\33[95m'
 CBEIGE2 = '\33[96m'
 CWHITE2 = '\33[97m'
 
+
 class Server:
     def __init__(self, PORT, TEST):
         self.TEST = TEST
@@ -60,7 +61,7 @@ class Server:
     def broadcast(self):
         self.timeToStart = time.time() + 10  # 20 sec to start game
         while time.time() < self.timeToStart and not self.Game_Stage:
-            print(f'{CCYAN}Broadcast UDP offers {int(self.timeToStart-time.time())} more seconds{CEND}')
+            print(f'{CCYAN}Broadcast UDP offers {int(self.timeToStart - time.time())} more seconds{CEND}')
             message = struct.pack('IbH', 0xabcddcba, 0x2, self.Server_Port)
             self.ServerUDP.sendto(message, (self.broadcastAddr, 13117))
             # print(f'sec to start: {self.timeToStart - time.time()}')
@@ -84,7 +85,8 @@ class Server:
                 threads.append(t)
                 t.start()
                 time.sleep(1)
-            except: pass
+            except:
+                pass
         for thread in threads:
             thread.join()
 
@@ -108,7 +110,8 @@ class Server:
                 self.teams_name.append(teamNameDecoded)
                 print("Team Name: ", teamNameDecoded, "has joined the game")
             self.dictLock.release()
-        except: return
+        except:
+            return
 
     def Game_On(self):
         first_number = random.randint(0, 6)
@@ -149,21 +152,23 @@ class Server:
             GameCloser += f'{CBLUE}{CITALIC}Nobody answer in time, its a %s!\n\n'
             winners = "Draw"
         else:
-            try: 
+            try:
                 if int(self.Players[self.Possible_Winner][2]) == self.Game_math_ans:
                     GameCloser += f'{CORANGE}{CBOLD}Congratulations to the winners: %s\n'
                     winners = self.Players[self.Possible_Winner][0]
                 else:
                     GameCloser += f'{CORANGE}{CBOLD}Congratulations to the winners: %s\n'
-                    winners = [self.teams_name[i] for i in range(len(self.teams_name)) if self.teams_name[i] != self.Players[self.Possible_Winner][0]][0]
+                    winners = [self.teams_name[i] for i in range(len(self.teams_name)) if
+                               self.teams_name[i] != self.Players[self.Possible_Winner][0]][0]
             except:
                 GameCloser += f'{CORANGE}{CBOLD}Congratulations to the winners: %s\n'
-                winners = [self.teams_name[i] for i in range(len(self.teams_name)) if self.teams_name[i] != self.Players[self.Possible_Winner][0]][0]
+                winners = [self.teams_name[i] for i in range(len(self.teams_name)) if
+                           self.teams_name[i] != self.Players[self.Possible_Winner][0]][0]
         msg_encode = (GameCloser % (self.Game_math_ans, winners)).encode()
         for player in self.Players.keys():
             player.sendall(msg_encode)
             player.close()
-    
+
     def reset_server(self):
         self.Game_Started = False
         self.Time_Remain = 0
@@ -195,10 +200,10 @@ class Server:
                     print(f'{CYELLOW2}There arent enough Teams to Start The Game{CEND}')
                     self.reset_server()
                     continue
-                    
+
                 s = time.time() + 5
                 while (time.time() < s):
-                    print(f'{CGREEN2}Game start in {int(s-time.time())} second {CEND}')
+                    print(f'{CGREEN2}Game start in {int(s - time.time())} second {CEND}')
                     time.sleep(1)
                 self.End_Time = time.time() + 10
 
@@ -213,7 +218,6 @@ class Server:
             except:
                 print(f'{CRED}Exception occured, Reset Server{CEND}')
                 self.reset_server()
-
 
 
 PORT = 2076
